@@ -1,15 +1,17 @@
 import dotenv from 'dotenv';
 dotenv.config();
 import sgMail from '@sendgrid/mail';
+import { otpEmailTemplate } from '../template/otpTemplate.js';
 const SENDGRID_API_KEY=process.env.SENDGRID_API_KEY
 sgMail.setApiKey(SENDGRID_API_KEY); 
 export const sendEmail = async (email, otp) => {
+    const emailHtml = otpEmailTemplate(otp);
     const msg = {
         to: email,
         from: 'Noreply@futuremakeup.com',
         subject: 'Your OTP Code',
         text: `Your OTP code is ${otp}`,
-        html: `<strong>Your OTP code is ${otp}</strong>`,
+        html: emailHtml
     };
     try {
         const response = await sgMail.send(msg);

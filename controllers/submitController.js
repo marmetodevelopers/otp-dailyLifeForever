@@ -1,5 +1,6 @@
 import Registration from '../models/registration.js';
 import LoginSession from '../models/loginSession.js';
+import { welcomeEmailTemplate } from '../template/thankyouTemplate.js';
 import { generateUniqueId } from '../util/generateId.js';
 import dotenv from 'dotenv';
 import { v4 as uuidv4, validate } from 'uuid';
@@ -9,6 +10,8 @@ import { validateUserData } from '../util/validate.js';
 import { storeInGoogleSheet } from '../util/sheets.js';
 const SENDGRID_API_KEY=process.env.SENDGRID_API_KEY
 sgMail.setApiKey(SENDGRID_API_KEY); 
+
+// handle form submission
 export const submit = async (req, res) => {
     
     try {
@@ -20,18 +23,10 @@ export const submit = async (req, res) => {
             addressOne, addressTwo, city, state,country, pincode,
             instagramId, campaignSource, otherValue, passport,termsAndConditions
         };
-        console.log(userData)
-        // const validationError = validateUserData(userData); 
-        // if (validationError) { 
-        //     return res.status(400).json({ message: 'Validation failed', errors: validationError }); 
-        // }
-        // const userId = uuidv4();
-        //  
-
+        
         const userCount = await Registration.countDocuments() ||0; 
         const uniqueId = `2024-25/KBKB0${userCount + 1}`;
-        // const uniqueId = generateUniqueId();
-
+        
         if (!phoneSessionId&&!emailSessionId) {
             return res.status(400).json({ message: 'Missing session ID' });
         }
@@ -49,8 +44,6 @@ export const submit = async (req, res) => {
             userId: uniqueId,
             email: emailSession.email,
             phoneNumber: phoneSession.phone,
-            
-
         });
         try {
             await newUser.save();
@@ -62,17 +55,17 @@ export const submit = async (req, res) => {
             throw error; 
         }
         
-
-        // Store values in Google Sheets
+      // Store values in Google Sheets
         await storeInGoogleSheet({ uniqueId, ...userData });
-
+        
+        const emailHtml = welcomeEmailTemplate(newUser.userId);
       // Send the unique registration ID to the user's email
        const msg = {
         to: newUser.email,
         from: 'Noreply@futuremakeup.com',
         subject: 'Welcome to Daily life forever!',
         text: `Thank you for registering! Your unique ID is ${newUser.userId}. - The Daily life forever Team`,
-        html: `Thank you for registering! Your unique ID is <strong>${newUser.userId}</strong>.<br>- The Daily life forever Team</p>`
+        html: emailHtml
         };
     
         try {
@@ -90,6 +83,6 @@ export const submit = async (req, res) => {
         return res.status(201).json({ message: 'User registered successfully', userId: newUser.userId });
     } catch (error) {
         console.error('Error registering user:', error);
-        return res.status(500).json({ message: 'Internal server error' });
+        return res.status(500).json({ message: 'Internal server error.Please try again' });
     }
 };

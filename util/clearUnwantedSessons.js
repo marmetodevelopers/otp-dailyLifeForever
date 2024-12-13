@@ -1,5 +1,6 @@
 import LoginSession from '../models/loginSession.js';
 
+//clear unwanted sessions from database
 export const clearUnwantedSessions = async () => {
     try {
         const timeLimit = 15 * 60 * 1000; 
