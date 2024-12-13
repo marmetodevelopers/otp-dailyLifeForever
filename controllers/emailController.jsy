@@ -46,7 +46,7 @@ export const sendOtp = async (req, res) => {
         let session;
         if (type === 'email') {
             
-     //  await sendEmail(email, otp);
+      // await sendEmail(email, otp);
 	const emailResponse=await sendEmail(email, otp);
 	console.log(emailResponse)
             if (!emailResponse.success) {
@@ -70,14 +70,7 @@ export const sendOtp = async (req, res) => {
 
         } else if (type === 'phone') {
            
-         //  await sendSms(phone, otp);
-	const smsResponse=await sendSms(phone, otp);
-            if (!smsResponse.success) {
-                return res.status(500).json({ 
-                    message: smsResponse.message, 
-                    error: smsResponse.error 
-                });
-            }
+           await sendSms(phone, otp);
 	
 	    
             
@@ -168,24 +161,11 @@ export const resendOtp = async (req, res) => {
         }
 
         if (session.type === 'email') {
-          // await sendEmail(session.email, otp);
-	const emailResponse=await sendEmail(session.email, otp);
-            if (!emailResponse.success) {
-                return res.status(500).json({ 
-                    message: emailResponse.message, 
-                    error: emailResponse.error 
-                });
-            }
+           await sendEmail(session.email, otp);
 	
 	    
         } else if (session.type === 'phone') {
-           // await sendSms(session.phone, otp);
-	  const smsResponse= await sendSms(session.phone, otp);
-           if (!smsResponse.success) {
-            return res.status(500).json({ 
-                message: smsResponse.message, 
-                error: smsResponse.error 
-            });
+            await sendSms(session.phone, otp);
 	
 	
         } else {

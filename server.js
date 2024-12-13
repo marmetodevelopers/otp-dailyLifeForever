@@ -16,19 +16,19 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config();
 const app = express();
-// app.set('trust proxy', true);
+ app.set('trust proxy', 1);
 
-// const apiLimiter = rateLimit({
-//     windowMs: 1 * 60 * 1000, // 1 minutes
-//     limit: 60, // Limit each IP to 60 requests per `window`
-//     message: 'Too many requests from this IP, please try again later.',
-// })
+ const apiLimiter = rateLimit({
+     windowMs: 1 * 60 * 1000, // 1 minutes
+     limit: 60, // Limit each IP to 60 requests per `window`
+     message: 'Too many requests from this IP, please try again later.',
+ })
 
 
 //middlewares
 app.use(cors());
 app.use(express.json());
-// app.use(apiLimiter)
+app.use(apiLimiter)
 
 //database connection
 connectDB();
@@ -42,7 +42,7 @@ app.use("/api/submit", submitRoutes)
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
 //server
-const port = process.env.PORT || 6000;
+const port = process.env.PORT || 5001;
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
