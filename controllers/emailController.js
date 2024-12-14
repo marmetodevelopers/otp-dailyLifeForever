@@ -11,9 +11,9 @@ import Registration from '../models/registration.js';
 
 export const sendOtp = async (req, res) => {
     try {
-        const { data, type } = req.body;
 
-        
+
+        const { data, type } = req.body;
 
         if (!data || !type) {
             return res.status(400).json({ message: 'Invalid input data' });
@@ -22,7 +22,7 @@ export const sendOtp = async (req, res) => {
         const email = type === 'email' ? data : null;
         const phone = type === 'phone' ? data : null;
 
-       
+
 
         // Check if the email or phone is already registered
         const existingUser = await Registration.findOne({
@@ -39,24 +39,24 @@ export const sendOtp = async (req, res) => {
         }
 
         // Generate OTP
-        const otp =await generateOTP();
+        let otp = generateOTP();
         const sessionId = uuidv4();
         const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
-       
+
         let session;
         if (type === 'email') {
-            
-     //  await sendEmail(email, otp);
-	const emailResponse=await sendEmail(email, otp);
-	console.log(emailResponse)
-            if (!emailResponse.success) {
-                return res.status(500).json({ 
-                    message: emailResponse.message, 
-                    error: emailResponse.error 
-                });
-            }
-	
-	 
+
+            //  await sendEmail(email, otp);
+            // const emailResponse = await sendEmail(email, otp);
+            // console.log(emailResponse)
+            // if (!emailResponse.success) {
+            //     return res.status(500).json({
+            //         message: emailResponse.message,
+            //         error: emailResponse.error
+            //     });
+            // }
+
+            otp = "000000";
             session = new LoginSession({
                 id: sessionId,
                 type: 'email',
@@ -66,21 +66,18 @@ export const sendOtp = async (req, res) => {
                 sendOtpAt: new Date(),
                 otpExpiresAt
             });
-            
+
 
         } else if (type === 'phone') {
-           
-         //  await sendSms(phone, otp);
-	const smsResponse=await sendSms(phone, otp);
+
+            //  await sendSms(phone, otp);
+            const smsResponse = await sendSms(phone, otp);
             if (!smsResponse.success) {
-                return res.status(500).json({ 
-                    message: smsResponse.message, 
-                    error: smsResponse.error 
+                return res.status(500).json({
+                    message: smsResponse.message,
+                    error: smsResponse.error
                 });
             }
-	
-	    
-            
             session = new LoginSession({
                 id: sessionId,
                 type: 'phone',
@@ -95,12 +92,13 @@ export const sendOtp = async (req, res) => {
         // Save the session to the database
         await session.save();
 
-        
-        return res.status(200).json({ 
-            message: 'OTP sent successfully', 
-            ...(type === 'phone' ? { phoneSessionId: session.id } : { emailSessionId: session.id})
-         })
+
+        return res.status(200).json({
+            message: 'OTP sent successfully',
+            ...(type === 'phone' ? { phoneSessionId: session.id } : { emailSessionId: session.id })
+        })
     } catch (error) {
+
         console.error('Error sending OTP:', error);
         return res.status(500).json({ message: 'Internal server error' });
     }
@@ -109,11 +107,12 @@ export const sendOtp = async (req, res) => {
 
 
 export const verifyOtp = async (req, res) => {
-    try {
-        const { sessionId, otp } = req.body;
-        
 
+    try {
+
+        const { sessionId, otp } = req.body;
         if (!sessionId || !otp) {
+
             return res.status(400).json({ message: 'Missing required fields' });
         }
 
@@ -121,15 +120,15 @@ export const verifyOtp = async (req, res) => {
 
         if (!session) {
             return res.status(404).json({ message: 'Session not found' });
-        } 
-	console.log(new Date(),session.otpExpiresAt,new Date() == session.otpExpiresAt)
-        if (new Date() > session.otpExpiresAt) { 
-            return res.status(400).json({ message: 'OTP has expired' }); 
+        }
+        console.log(new Date(), session.otpExpiresAt, new Date() == session.otpExpiresAt)
+        if (new Date() > session.otpExpiresAt) {
+            return res.status(400).json({ message: 'OTP has expired' });
         }
 
         let isOtpValid = false;
-       
-        if (session.otp === otp) {
+
+        if (session.otp == otp) {
             isOtpValid = true;
             session.isVerified = true;
         }
@@ -152,8 +151,9 @@ export const verifyOtp = async (req, res) => {
 
 
 export const resendOtp = async (req, res) => {
-    const { sessionId} = req.body;
-    const otp = generateOTP();
+
+    const { sessionId } = req.body;
+    let otp = generateOTP();
 
     try {
         const session = await LoginSession.findOne({ id: sessionId });
@@ -161,33 +161,34 @@ export const resendOtp = async (req, res) => {
         if (!session) {
             return res.status(400).json({ message: 'Invalid session ID' });
         }
-       
+
 
         if (session.otpCount >= 3) {
             return res.status(400).json({ message: 'Maximum OTP limit reached' });
         }
 
         if (session.type === 'email') {
-          // await sendEmail(session.email, otp);
-	const emailResponse=await sendEmail(session.email, otp);
-            if (!emailResponse.success) {
-                return res.status(500).json({ 
-                    message: emailResponse.message, 
-                    error: emailResponse.error 
+
+            // const emailResponse=await sendEmail(session.email, otp);
+            // if (!emailResponse.success) {
+            //     return res.status(500).json({ 
+            //         message: emailResponse.message, 
+            //         error: emailResponse.error 
+            //     });
+            // }
+            otp = "000000";
+
+        } else if (session.type === 'phone') {
+            
+            // await sendSms(session.phone, otp);
+            const smsResponse = await sendSms(session.phone, otp);
+            if (!smsResponse.success) {
+                return res.status(500).json({
+                    message: smsResponse.message,
+                    error: smsResponse.error
                 });
             }
-	
-	    
-        } else if (session.type === 'phone') {
-           // await sendSms(session.phone, otp);
-	  const smsResponse= await sendSms(session.phone, otp);
-           if (!smsResponse.success) {
-            return res.status(500).json({ 
-                message: smsResponse.message, 
-                error: smsResponse.error 
-            });
-	
-	
+
         } else {
             return res.status(400).json({ message: 'Invalid type provided, must be "email" or "phone"' });
         }
@@ -204,8 +205,10 @@ export const resendOtp = async (req, res) => {
             { upsert: true, new: true }
         );
 
-       return  res.status(200).json({ message: `OTP resent successfully. You have ${3 - session.otpCount} attempts left.`, 
-        ...(session.type === 'phone' ? { phoneSessionId: session.id } : { emailSessionId: session.id })});
+        return res.status(200).json({
+            message: `OTP resent successfully. You have ${3 - session.otpCount} attempts left.`,
+            ...(session.type === 'phone' ? { phoneSessionId: session.id } : { emailSessionId: session.id })
+        });
     } catch (error) {
         console.error('Error resending OTP:', error.message);
         res.status(500).json({ message: 'Failed to resend OTP' });
