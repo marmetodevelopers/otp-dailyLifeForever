@@ -38,3 +38,37 @@ export const sendSms = async (phoneNumber, otp) => {
     }
 };
 
+export const sendRegSms = async (phoneNumber, name, id) => {
+
+    const phoneNo = phoneNumber.replace("91", "");
+    try {
+
+        const data = {
+            distinct_id: phoneNumber,
+            phone: phoneNumber,
+            event: 'M_REGISTERED',
+            data: {
+                "name": name,
+                "phone": phoneNo,
+                "unique_id": id
+            },
+        };
+        console.log(data);
+        const response = await axios.post(LIMECHAT_API_URL, data,  {
+            headers: {
+                'Content-Type': 'application/json',
+                'x-limechat-uat': LIMECHAT_ACCESS_TOKEN,
+                'x-fb-account-id': LIMECHAT_ACCOUNT_ID
+            }
+        });
+        console.log(response.data);
+        if (response.status === 201) {
+            return { success: true, message: 'OTP sent successfully', otp };
+        } else {
+            return { success: false, message: 'Failed to send OTP', details: response.data };
+        }
+    } catch (error) {
+        console.error('Error sending OTP:', error.response ? error.response.data : error.message);
+        return { success: false, message: 'Failed to send OTP', error: error.response ? error.response.data : error.message };
+    }
+};

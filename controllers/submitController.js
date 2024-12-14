@@ -1,13 +1,13 @@
 import Registration from '../models/registration.js';
 import LoginSession from '../models/loginSession.js';
-import { generateUniqueId } from '../util/generateId.js';
+//import { generateUniqueId } from '../util/generateId.js';
 import dotenv from 'dotenv';
-import { v4 as uuidv4, validate } from 'uuid';
 dotenv.config();
 import sgMail from '@sendgrid/mail';
-import { validateUserData } from '../util/validate.js';
+//import { validateUserData } from '../util/validate.js';
 import { storeInGoogleSheet } from '../util/sheets.js';
-import { welcomeEmailTemplate } from '../template/thankyouTemplate.js';
+// import { welcomeEmailTemplate } from '../template/thankyouTemplate.js';
+import { sendRegSms } from '../util/sendSms.js';
 const SENDGRID_API_KEY=process.env.SENDGRID_API_KEY
 sgMail.setApiKey(SENDGRID_API_KEY); 
 export const submit = async (req, res) => {
@@ -31,7 +31,6 @@ export const submit = async (req, res) => {
 
         const userCount = await Registration.countDocuments() ||0; 
         const uniqueId = `2024-25/KBKB0${userCount + 1}`;
-        // const uniqueId = generateUniqueId();
 
         if (!phoneSessionId&&!emailSessionId) {
             return res.status(400).json({ message: 'Missing session ID' });
@@ -50,45 +49,40 @@ export const submit = async (req, res) => {
             userId: uniqueId,
             email: emailSession.email,
             phoneNumber: phoneSession.phone,
-            
-
         });
         try {
             await newUser.save();
         } catch (error) {
+
             if (error.code === 11000) {
                 
                 return res.status(401).json({ message: 'Error occurred. Please Register again.' });
             }
-           
         }
         
-
         // Store values in Google Sheets
         await storeInGoogleSheet({ uniqueId, ...userData });
-	const emailHtml = welcomeEmailTemplate(newUser.userId);
+	    // const emailHtml = welcomeEmailTemplate(newUser.userId);
+        // Send the unique registration ID to the user's email
+        //    const msg = {
+        //         to: newUser.email,
+        //         from: 'Noreply@futuremakeup.com',
+        //         subject: 'Welcome to Daily life forever!',
+        //         text: `Thank you for registering! Your unique ID is ${newUser.userId}. - The Daily life forever Team`,
+        //         html: emailHtml
+        //     };
 
-      // Send the unique registration ID to the user's email
-       const msg = {
-        to: newUser.email,
-        from: 'Noreply@futuremakeup.com',
-        subject: 'Welcome to Daily life forever!',
-        text: `Thank you for registering! Your unique ID is ${newUser.userId}. - The Daily life forever Team`,
-        html: emailHtml
-        };
-    
-        try {
-            const response = await sgMail.send(msg);
-            
-        } catch (error) {
-            
-            res.status(500).json({ message: 'Failed to send OTP' });
+        const name = `${firstName} ${lastName}`;
+        const response = await sendRegSms(phoneSession.phone, name, uniqueId);
+        if (!response.success) {
+            return res.status(500).json({
+                message: response.message,
+                error: response.error
+            });
         }
         // Clear both sessions from the database 
         await LoginSession.deleteOne({ id: phoneSessionId }); 
         await LoginSession.deleteOne({ id: emailSessionId });
-
-        
         return res.status(201).json({ message: 'User registered successfully', userId: newUser.userId });
     } catch (error) {
         console.error('Error registering user:', error);
