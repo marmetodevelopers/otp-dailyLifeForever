@@ -74,12 +74,12 @@ export const submit = async (req, res) => {
 
         const name = `${firstName} ${lastName}`;
         const response = await sendRegSms(phoneSession.phone, name, uniqueId);
-        if (!response.success) {
-            return res.status(500).json({
-                message: response.message,
-                error: response.error
-            });
-        }
+        // if (!response.success) {
+        //     return res.status(500).json({
+        //         message: "",
+        //         error: response.error
+        //     });
+        // }
         // Clear both sessions from the database 
         await LoginSession.deleteOne({ id: phoneSessionId }); 
         await LoginSession.deleteOne({ id: emailSessionId });

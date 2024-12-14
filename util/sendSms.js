@@ -63,7 +63,7 @@ export const sendRegSms = async (phoneNumber, name, id) => {
         });
         console.log(response.data);
         if (response.status === 201) {
-            return { success: true, message: 'OTP sent successfully', otp };
+            return { success: true, message: 'OTP sent successfully'};
         } else {
             return { success: false, message: 'Failed to send OTP', details: response.data };
         }
